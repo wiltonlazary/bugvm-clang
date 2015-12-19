@@ -1,3 +1,7 @@
+Mirror of official clang git repository located at http://llvm.org/git/clang.  Updated hourly.
+http://clang.llvm.org/
+
+
 //===----------------------------------------------------------------------===//
 // C Language Family Front-end
 //===----------------------------------------------------------------------===//
