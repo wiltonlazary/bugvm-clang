@@ -31,9 +31,9 @@ protected:
     return Result;
   }
 
-  static std::string format(
-      llvm::StringRef Code,
-      const FormatStyle &Style = getGoogleStyle(FormatStyle::LK_Java)) {
+  static std::string
+  format(llvm::StringRef Code,
+         const FormatStyle &Style = getGoogleStyle(FormatStyle::LK_Java)) {
     return format(Code, 0, Code.size(), Style);
   }
 
@@ -67,6 +67,8 @@ TEST_F(FormatTestJava, FormatsInstanceOfLikeOperators) {
   verifyFormat("return aaaaaaaaaaaaaaaaaaaaaaaaaaaaa instanceof\n"
                "    bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb;",
                Style);
+  verifyFormat("return aaaaaaaaaaaaaaaaaaa instanceof bbbbbbbbbbbbbbbbbbbbbbb\n"
+               "    && ccccccccccccccccccc instanceof dddddddddddddddddddddd;");
 }
 
 TEST_F(FormatTestJava, Chromium) {
@@ -151,6 +153,19 @@ TEST_F(FormatTestJava, ClassDeclarations) {
                "  void doStuff(int theStuff);\n"
                "  void doMoreStuff(int moreStuff);\n"
                "}");
+}
+
+TEST_F(FormatTestJava, AnonymousClasses) {
+  verifyFormat("return new A() {\n"
+               "  public String toString() {\n"
+               "    return \"NotReallyA\";\n"
+               "  }\n"
+               "};");
+  verifyFormat("A a = new A() {\n"
+               "  public String toString() {\n"
+               "    return \"NotReallyA\";\n"
+               "  }\n"
+               "};");
 }
 
 TEST_F(FormatTestJava, EnumDeclarations) {
@@ -242,6 +257,9 @@ TEST_F(FormatTestJava, Annotations) {
   verifyFormat("@Override // comment\n"
                "@Nullable\n"
                "public String getNameIfPresent() {}");
+  verifyFormat("@java.lang.Override // comment\n"
+               "@Nullable\n"
+               "public String getNameIfPresent() {}");
 
   verifyFormat("@SuppressWarnings(value = \"unchecked\")\n"
                "public void doSomething() {}");
@@ -255,16 +273,44 @@ TEST_F(FormatTestJava, Annotations) {
                "});");
 
   verifyFormat("void SomeFunction(@Nullable String something) {}");
+  verifyFormat("void SomeFunction(@org.llvm.Nullable String something) {}");
 
   verifyFormat("@Partial @Mock DataLoader loader;");
+  verifyFormat("@Partial\n"
+               "@Mock\n"
+               "DataLoader loader;",
+               getChromiumStyle(FormatStyle::LK_Java));
   verifyFormat("@SuppressWarnings(value = \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\")\n"
                "public static int iiiiiiiiiiiiiiiiiiiiiiii;");
 
   verifyFormat("@SomeAnnotation(\"With some really looooooooooooooong text\")\n"
                "private static final long something = 0L;");
+  verifyFormat("@org.llvm.Qualified(\"With some really looooooooooong text\")\n"
+               "private static final long something = 0L;");
   verifyFormat("@Mock\n"
                "DataLoader loooooooooooooooooooooooader =\n"
                "    aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa;",
+               getStyleWithColumns(60));
+  verifyFormat("@org.llvm.QualifiedMock\n"
+               "DataLoader loooooooooooooooooooooooader =\n"
+               "    aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa;",
+               getStyleWithColumns(60));
+  verifyFormat("@Test(a)\n"
+               "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa =\n"
+               "    aaaaaaaaaaaaaaaaaaaaaaaaaaaa(aaaaaaaaaaaaaaaaaaaaaaa);");
+  verifyFormat("@SomeAnnotation(\n"
+               "    aaaaaaaaaaaaaaaaa, aaaaaaaaaaaaaaaaaaaa)\n"
+               "int i;",
+               getStyleWithColumns(50));
+  verifyFormat("@Test\n"
+               "ReturnType doSomething(\n"
+               "    String aaaaaaaaaaaaa, String bbbbbbbbbbbbbbb) {}",
+               getStyleWithColumns(60));
+  verifyFormat("{\n"
+               "  boolean someFunction(\n"
+               "      @Param(aaaaaaaaaaaaaaaa) String aaaaa,\n"
+               "      String bbbbbbbbbbbbbbb) {}\n"
+               "}",
                getStyleWithColumns(60));
 }
 
@@ -282,6 +328,7 @@ TEST_F(FormatTestJava, Generics) {
   verifyFormat("protected <R> ArrayList<R> get() {}");
   verifyFormat("private <R> ArrayList<R> get() {}");
   verifyFormat("public static <R> ArrayList<R> get() {}");
+  verifyFormat("public static native <R> ArrayList<R> get();");
   verifyFormat("public final <X> Foo foo() {}");
   verifyFormat("public abstract <X> Foo foo();");
   verifyFormat("<T extends B> T getInstance(Class<T> type);");
@@ -289,6 +336,10 @@ TEST_F(FormatTestJava, Generics) {
 
   verifyFormat("private Foo<X, Y>[] foos;");
   verifyFormat("Foo<X, Y>[] foos = this.foos;");
+  verifyFormat("return (a instanceof List<?>)\n"
+               "    ? aaaaaaaaaaaaaaaaaaaaaaa(aaaaaaaaaaaaaaaaaaaaa)\n"
+               "    : aaaaaaaaaaaaaaaaaaaaaaa;",
+               getStyleWithColumns(60));
 
   verifyFormat(
       "SomeLoooooooooooooooooooooongType name =\n"
@@ -329,10 +380,25 @@ TEST_F(FormatTestJava, TryCatchFinally) {
                "}");
 }
 
+TEST_F(FormatTestJava, TryWithResources) {
+  verifyFormat("try (SomeResource rs = someFunction()) {\n"
+               "  Something();\n"
+               "}");
+  verifyFormat("try (SomeResource rs = someFunction()) {\n"
+               "  Something();\n"
+               "} catch (SomeException e) {\n"
+               "  HandleException(e);\n"
+               "}");
+}
+
 TEST_F(FormatTestJava, SynchronizedKeyword) {
   verifyFormat("synchronized (mData) {\n"
                "  // ...\n"
                "}");
+}
+
+TEST_F(FormatTestJava, AssertKeyword) {
+  verifyFormat("assert a && b;");
 }
 
 TEST_F(FormatTestJava, PackageDeclarations) {
@@ -342,6 +408,8 @@ TEST_F(FormatTestJava, PackageDeclarations) {
 
 TEST_F(FormatTestJava, ImportDeclarations) {
   verifyFormat("import some.really.loooooooooooooooooooooong.imported.Class;",
+               getStyleWithColumns(50));
+  verifyFormat("import static some.really.looooooooooooooooong.imported.Class;",
                getStyleWithColumns(50));
 }
 
@@ -358,6 +426,7 @@ TEST_F(FormatTestJava, CppKeywords) {
   verifyFormat("public void union(Type a, Type b);");
   verifyFormat("public void struct(Object o);");
   verifyFormat("public void delete(Object o);");
+  verifyFormat("return operator && (aa);");
 }
 
 TEST_F(FormatTestJava, NeverAlignAfterReturn) {
@@ -375,7 +444,7 @@ TEST_F(FormatTestJava, NeverAlignAfterReturn) {
                getStyleWithColumns(40));
   verifyFormat("return aaaaaaaaaaaaaaaaaaa()\n"
                "    .bbbbbbbbbbbbbbbbbbb(\n"
-               "         ccccccccccccccc)\n"
+               "        ccccccccccccccc)\n"
                "    .ccccccccccccccccccc();",
                getStyleWithColumns(40));
 }
@@ -387,6 +456,11 @@ TEST_F(FormatTestJava, FormatsInnerBlocks) {
                "    System.out.println(42);\n"
                "  }\n"
                "}, someOtherParameter);");
+  verifyFormat("someFunction(new Runnable() {\n"
+               "  public void run() {\n"
+               "    System.out.println(42);\n"
+               "  }\n"
+               "});");
   verifyFormat("someObject.someFunction(\n"
                "    new Runnable() {\n"
                "      @Override\n"
@@ -423,6 +497,19 @@ TEST_F(FormatTestJava, BreaksStringLiterals) {
   // requires strings to be merged using "+" which we don't support.
   EXPECT_EQ("\"some text other\";",
             format("\"some text other\";", getStyleWithColumns(14)));
+}
+
+TEST_F(FormatTestJava, AlignsBlockComments) {
+  EXPECT_EQ("/*\n"
+            " * Really multi-line\n"
+            " * comment.\n"
+            " */\n"
+            "void f() {}",
+            format("  /*\n"
+                   "   * Really multi-line\n"
+                   "   * comment.\n"
+                   "   */\n"
+                   "  void f() {}"));
 }
 
 } // end namespace tooling

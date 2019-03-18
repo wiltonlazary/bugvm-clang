@@ -128,11 +128,16 @@
 // RUN:   | FileCheck --check-prefix=CHECK-LTO %s
 // CHECK-LTO: ld{{.*}}" "-plugin{{.*}}LLVMgold.so
 
-// RUN: %clang -target sparc-unknown-freebsd8 %s -### -fpic 2>&1 \
+// RUN: %clang -target sparc-unknown-freebsd8 %s -### -fpic -no-integrated-as 2>&1 \
 // RUN:   | FileCheck --check-prefix=CHECK-SPARC-PIE %s
 // CHECK-SPARC-PIE: as{{.*}}" "-KPIC
 
-// RUN: %clang -mcpu=ultrasparc -target sparc64-unknown-freebsd8 %s -### 2>&1 \
+// RUN: %clang -mcpu=ultrasparc -target sparc64-unknown-freebsd8 %s -### -no-integrated-as 2>&1 \
 // RUN:   | FileCheck --check-prefix=CHECK-SPARC-CPU %s
 // CHECK-SPARC-CPU: cc1{{.*}}" "-target-cpu" "ultrasparc"
-// CHECK-SPARC-CPU: as{{.*}}" "-Av9a
+// CHECK-SPARC-CPU: as{{.*}}" "-Av9
+
+// Check that -G flags are passed to the linker for mips
+// RUN: %clang -target mips-unknown-freebsd %s -### -G0 2>&1 \
+// RUN:   | FileCheck --check-prefix=CHECK-MIPS-G %s
+// CHECK-MIPS-G: ld{{.*}}" "-G0"

@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <string.h>
 #include "clang/Frontend/CodeGenOptions.h"
+#include <string.h>
 
 namespace clang {
 
@@ -19,6 +19,14 @@ CodeGenOptions::CodeGenOptions() {
 
   RelocationModel = "pic";
   memcpy(CoverageVersion, "402*", 4);
+}
+
+bool CodeGenOptions::isNoBuiltinFunc(const char *Name) const {
+  StringRef FuncName(Name);
+  for (unsigned i = 0, e = NoBuiltinFuncs.size(); i != e; ++i)
+    if (FuncName.equals(NoBuiltinFuncs[i]))
+      return true;
+  return false;
 }
 
 }  // end namespace clang

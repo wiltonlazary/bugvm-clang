@@ -10,16 +10,16 @@
 #include "clang/AST/ASTConsumer.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/RecursiveASTVisitor.h"
+#include "clang/Basic/TargetInfo.h"
+#include "clang/CodeGen/ModuleBuilder.h"
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Lex/Preprocessor.h"
-#include "clang/CodeGen/ModuleBuilder.h"
-#include "clang/Sema/Sema.h"
 #include "clang/Parse/ParseAST.h"
-#include "clang/Basic/TargetInfo.h"
+#include "clang/Sema/Sema.h"
 #include "llvm/ADT/Triple.h"
+#include "llvm/IR/LLVMContext.h"
 #include "llvm/Support/Host.h"
 #include "llvm/Support/MemoryBuffer.h"
-#include "llvm/IR/LLVMContext.h"
 #include "gtest/gtest.h"
 
 using namespace llvm;
@@ -62,11 +62,12 @@ TEST(BufferSourceTest, EmitCXXGlobalInitFunc) {
         CreateLLVMCodeGen(
             compiler.getDiagnostics(),
             "EmitCXXGlobalInitFuncTest",
+            compiler.getHeaderSearchOpts(),
+            compiler.getPreprocessorOpts(),
             compiler.getCodeGenOpts(),
-            compiler.getTargetOpts(),
             llvm::getGlobalContext())));
 
-    compiler.createSema(clang::TU_Prefix,NULL);
+    compiler.createSema(clang::TU_Prefix, nullptr);
 
     clang::SourceManager &sm = compiler.getSourceManager();
     sm.setMainFileID(sm.createFileID(
@@ -75,4 +76,4 @@ TEST(BufferSourceTest, EmitCXXGlobalInitFunc) {
     clang::ParseAST(compiler.getSema(), false, false);
 }
 
-}
+} // end anonymous namespace

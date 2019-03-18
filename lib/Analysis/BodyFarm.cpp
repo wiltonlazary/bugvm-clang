@@ -13,11 +13,11 @@
 //===----------------------------------------------------------------------===//
 
 #include "BodyFarm.h"
-#include "clang/Analysis/CodeInjector.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/Decl.h"
 #include "clang/AST/Expr.h"
 #include "clang/AST/ExprObjC.h"
+#include "clang/Analysis/CodeInjector.h"
 #include "llvm/ADT/StringSwitch.h"
 
 using namespace clang;
@@ -36,10 +36,7 @@ static bool isDispatchBlock(QualType Ty) {
   // returns void.
   const FunctionProtoType *FT =
   BPT->getPointeeType()->getAs<FunctionProtoType>();
-  if (!FT || !FT->getReturnType()->isVoidType() || FT->getNumParams() != 0)
-    return false;
-
-  return true;
+  return FT && FT->getReturnType()->isVoidType() && FT->getNumParams() == 0;
 }
 
 namespace {
@@ -115,7 +112,7 @@ DeclRefExpr *ASTMaker::makeDeclRefExpr(const VarDecl *D) {
                         /* QualifierLoc = */ NestedNameSpecifierLoc(),
                         /* TemplateKWLoc = */ SourceLocation(),
                         /* D = */ const_cast<VarDecl*>(D),
-                        /* RefersToCapturedVariable = */ false,
+                        /* RefersToEnclosingVariableOrCapture = */ false,
                         /* NameLoc = */ SourceLocation(),
                         /* T = */ D->getType(),
                         /* VK = */ VK_LValue);
